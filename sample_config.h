@@ -18,8 +18,6 @@
 
 #define intLED1_state_topic "%s/intLED1/state"
 #define intLED1_set_topic "%s/intLED1/set"
-#define intLED2_state_topic "%s/intLED2/state"
-#define intLED2_set_topic "%s/intLED2/set"
 
 const char* on_cmd = "ON";
 const char* off_cmd = "OFF";
