@@ -316,7 +316,7 @@ void sendState(int topnum) {
   }  
   if (topnum == 3) {
      char result3[5]; 
-     dtostrf(presValue, 3, 1, result3); 
+     dtostrf(presValue, 3, 2, result3); 
      sendpub(pres_state_top,result3,true);
   }  
   if (topnum == 4) {
