@@ -14,6 +14,7 @@
 #define temp_state_topic "%s/temp/state"
 #define feel_state_topic "%s/feel/state"
 #define humid_state_topic "%s/humid/state"
+#define pres_state_topic "%s/pres/state"
 #define lux_state_topic "%s/lux/state"
 
 #define intLED1_state_topic "%s/intLED1/state"
