@@ -47,13 +47,15 @@ BME280I2C bme;    // Default : forced mode, standby time = 1000 ms
 BME280::TempUnit tempUnit(BME280::TempUnit_Fahrenheit);
 BME280::PresUnit presUnit(BME280::PresUnit_inHg);
 int period = 3000;
+int lux_period = 15000;
 unsigned long time_now = 0;
+unsigned long time_now_2 = 0;
 
 /**************************** SENSOR DEFINITIONS *******************************************/
 //float luxValue;
 int lux;
 //float calcLux;
-float diffLux = 25;
+float diffLux = 30;
 
 // difference in temperature to trigger a MQTT publish
 float diffTemp = 0.5;
@@ -64,7 +66,7 @@ float diffHum = 1.5;
 float humValue;
 float newHumValue;
 
-float diffPres = 0.1;
+float diffPres = 0.01;
 float presValue;
 float newPresValue;
 
@@ -271,9 +273,9 @@ void setup_wifi() {
   // toggle on board LED as WiFi comes up
   while (WiFi.status() != WL_CONNECTED) {
      digitalWrite(intLED1Pin, intLED1on);
-     delay(50);
+     delay(70);
      digitalWrite(intLED1Pin, intLED1off);
-     delay(25);
+     delay(45);
      Serial.print(".");
   }
   Serial.println("");
@@ -404,13 +406,16 @@ void loop() {
       presValue = newPresValue;
       sendState(3);
     }
-    
+  }  
+  if(millis() > time_now_2 + lux_period){
+    time_now_2 = millis();
+
     // read the LUX sensor
     int newLUX = analogRead(luxPin);
     // check LUX difference - do we need to update the status
     if (checkBoundSensor(newLUX, lux, diffLux)) {
       lux = newLUX;
-      sendState(3);
+      sendState(4);
     }
   }  
 }
