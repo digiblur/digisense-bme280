@@ -41,15 +41,29 @@
 #define intLED1on  LOW
 #define intLED1off HIGH
 
-BME280I2C bme;    // Default : forced mode, standby time = 1000 ms
+BME280I2C::Settings settings(
+   BME280::OSR_X1,
+   BME280::OSR_X1,
+   BME280::OSR_X1,
+   BME280::Mode_Forced,
+   BME280::StandbyTime_1000ms,
+   BME280::Filter_Off,
+   BME280::SpiEnable_False,
+   0x76 // I2C address. I2C specific.
+);
+
+BME280I2C bme(settings);
+
+
+//BME280I2C bme;    // Default : forced mode, standby time = 1000 ms
                   // Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off,
 
 BME280::TempUnit tempUnit(BME280::TempUnit_Fahrenheit);
 BME280::PresUnit presUnit(BME280::PresUnit_inHg);
-int period = 3000;
+int bme_period = 60000;
 int lux_period = 15000;
-unsigned long time_now = 0;
-unsigned long time_now_2 = 0;
+unsigned long bme_time_now = 0;
+unsigned long lux_time_now = 0;
 
 /**************************** SENSOR DEFINITIONS *******************************************/
 //float luxValue;
@@ -62,7 +76,7 @@ float diffTemp = 0.5;
 float tempValue;
 float newTempValue;
 
-float diffHum = 1.5;
+float diffHum = 0.5;
 float humValue;
 float newHumValue;
 
@@ -70,7 +84,7 @@ float diffPres = 0.01;
 float presValue;
 float newPresValue;
 
-float diffFeel = 0.2;
+float diffFeel = 0.5;
 float feelValue;
 float newFeelValue;
 
@@ -298,7 +312,7 @@ bool sendpub(char* topic, char* mqmess, bool retain = true) {
 void sendState(int topnum) {
   if (topnum == 1 || topnum == 2) {
 //       float newfeelValue = dht.computeHeatIndex(tempValue, humValue, IsFahrenheit);
-       float newfeelValue = calculateHeatIndex(humValue, tempValue);
+       float newfeelValue = calculateHeatIndex(newHumValue, newTempValue);
        if (checkBoundSensor(newfeelValue, feelValue, diffFeel)) {
          feelValue = newfeelValue;
          char result2[5]; 
@@ -388,8 +402,9 @@ void loop() {
   }
   client.loop();
 
-  if(millis() > time_now + period){
-    time_now = millis();
+  if(millis() > bme_time_now + bme_period){
+    bme_time_now = millis();
+    Serial.println("Read BME280...");
     bme.read(newPresValue, newTempValue, newHumValue, tempUnit, presUnit);
     // check temp difference - do we need to update the status
     if (checkBoundSensor(newTempValue, tempValue, diffTemp)) {
@@ -407,9 +422,9 @@ void loop() {
       sendState(3);
     }
   }  
-  if(millis() > time_now_2 + lux_period){
-    time_now_2 = millis();
-
+  if(millis() > lux_time_now + lux_period){
+    lux_time_now = millis();
+    Serial.println("Read lux...");
     // read the LUX sensor
     int newLUX = analogRead(luxPin);
     // check LUX difference - do we need to update the status
