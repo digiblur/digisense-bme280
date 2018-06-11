@@ -23,6 +23,7 @@
 */
 
 #include <BME280I2C.h>
+#include <EnvironmentCalculations.h>
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include <PubSubClient.h>
@@ -36,8 +37,10 @@
 
 /**************************** PIN DEFINITIONS ********************************************/
 #define luxPin    A0
-#define intLED1Pin   BUILTIN_LED  // D0  Wemos D1
-//#define intLED1Pin   LED_BUILTIN  // D0 NodeMCU
+#define sdaPin    D2
+#define sclPin    D1
+//#define intLED1Pin   BUILTIN_LED  // D0  Wemos Mini D1
+#define intLED1Pin   LED_BUILTIN  // D0 NodeMCU
 #define intLED1on  LOW
 #define intLED1off HIGH
 
@@ -49,7 +52,7 @@ BME280I2C::Settings settings(
    BME280::StandbyTime_1000ms,
    BME280::Filter_Off,
    BME280::SpiEnable_False,
-   0x76 // I2C address. I2C specific.
+   BME280I2C::I2CAddr_0x76 // I2C address. I2C specific.
 );
 
 BME280I2C bme(settings);
@@ -60,6 +63,7 @@ BME280I2C bme(settings);
 
 BME280::TempUnit tempUnit(BME280::TempUnit_Fahrenheit);
 BME280::PresUnit presUnit(BME280::PresUnit_inHg);
+EnvironmentCalculations::TempUnit     envTempUnit =  EnvironmentCalculations::TempUnit_Fahrenheit;
 int bme_period = 60000;
 int lux_period = 15000;
 unsigned long bme_time_now = 0;
@@ -128,7 +132,7 @@ void setup() {
 
   Serial.begin(115200);
   while(!Serial) {} // Wait
-  Wire.begin();
+  Wire.begin(sdaPin, sclPin);
   
   pinMode(luxPin, INPUT);
   pinMode(intLED1Pin, OUTPUT); 
@@ -283,6 +287,7 @@ void setup_wifi() {
   WiFi.mode(WIFI_STA);
   WiFi.hostname(NodeID);
   WiFi.begin(def_wifi_ssid, def_wifi_password);
+  delay(10);
 
   // toggle on board LED as WiFi comes up
   while (WiFi.status() != WL_CONNECTED) {
@@ -310,9 +315,10 @@ bool sendpub(char* topic, char* mqmess, bool retain = true) {
 
 /********************************** START SEND STATE*****************************************/
 void sendState(int topnum) {
+  digitalWrite(intLED1Pin, intLED1on);
   if (topnum == 1 || topnum == 2) {
-//       float newfeelValue = dht.computeHeatIndex(tempValue, humValue, IsFahrenheit);
-       float newfeelValue = calculateHeatIndex(newHumValue, newTempValue);
+//       float newfeelValue = calculateHeatIndex(newHumValue, newTempValue);
+       float newfeelValue = EnvironmentCalculations::HeatIndex(newTempValue, newHumValue, envTempUnit);
        if (checkBoundSensor(newfeelValue, feelValue, diffFeel)) {
          feelValue = newfeelValue;
          char result2[5]; 
@@ -340,6 +346,7 @@ void sendState(int topnum) {
      itoa(lux, result4, 10);
      sendpub(lux_state_top,result4,true);
   }
+  digitalWrite(intLED1Pin, intLED1off);
 }
 
 /*
@@ -347,24 +354,24 @@ void sendState(int topnum) {
  * NOAA heat index calculations taken from
  * http://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
  */
-float calculateHeatIndex(float humidity, float temp) {
-  float heatIndex= 0;
-  if (temp >= 80) {
-    heatIndex = -42.379 + 2.04901523*temp + 10.14333127*humidity;
-    heatIndex = heatIndex - .22475541*temp*humidity - .00683783*temp*temp;
-    heatIndex = heatIndex - .05481717*humidity*humidity + .00122874*temp*temp*humidity;
-    heatIndex = heatIndex + .00085282*temp*humidity*humidity - .00000199*temp*temp*humidity*humidity;
-  } else {
-     heatIndex = 0.5 * (temp + 61.0 + ((temp - 68.0)*1.2) + (humidity * 0.094));
-  }
-
-  if (humidity < 13 && 80 <= temp <= 112) {
-     float adjustment = ((13-humidity)/4) * sqrt((17-abs(temp-95.))/17);
-     heatIndex = heatIndex - adjustment;
-  }
-
-  return heatIndex;
-}
+//float calculateHeatIndex(float humidity, float temp) {
+//  float heatIndex= 0;
+//  if (temp >= 80) {
+//    heatIndex = -42.379 + 2.04901523*temp + 10.14333127*humidity;
+//    heatIndex = heatIndex - .22475541*temp*humidity - .00683783*temp*temp;
+//    heatIndex = heatIndex - .05481717*humidity*humidity + .00122874*temp*temp*humidity;
+//    heatIndex = heatIndex + .00085282*temp*humidity*humidity - .00000199*temp*temp*humidity*humidity;
+//  } else {
+//     heatIndex = 0.5 * (temp + 61.0 + ((temp - 68.0)*1.2) + (humidity * 0.094));
+//  }
+//
+//  if (humidity < 13 && 80 <= temp <= 112) {
+//     float adjustment = ((13-humidity)/4) * sqrt((17-abs(temp-95.))/17);
+//     heatIndex = heatIndex - adjustment;
+//  }
+//
+//  return heatIndex;
+//}
 
 
 /********************************** START RECONNECT*****************************************/
