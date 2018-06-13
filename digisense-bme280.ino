@@ -84,7 +84,7 @@ float diffHum = 0.5;
 float humValue;
 float newHumValue;
 
-float diffPres = 0.01;
+float diffPres = 0.002;
 float presValue;
 float newPresValue;
 
@@ -338,7 +338,7 @@ void sendState(int topnum) {
   }  
   if (topnum == 3) {
      char result3[5]; 
-     dtostrf(presValue, 3, 2, result3); 
+     dtostrf(presValue, 3, 3, result3); 
      sendpub(pres_state_top,result3,true);
   }  
   if (topnum == 4) {
