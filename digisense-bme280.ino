@@ -1,6 +1,3 @@
-
-
-
 /*
   digisense-bme280
 
@@ -18,8 +15,8 @@
       - Uploads Speed 115200
   
   - You will also need to download the follow libraries by going to Sketch -> Include Libraries -> Manage Libraries
-      - PubSubClient
-      - ArduinoJSON
+      - PubSubClient 
+      - ArduinoJSON (5.x)
 */
 
 #include <BME280I2C.h>
